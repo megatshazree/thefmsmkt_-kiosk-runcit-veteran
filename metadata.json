@@ -1,0 +1,8 @@
+{
+  "name": "THEFMSMKT: KIOSK RUNCIT VETERAN",
+  "description": "A comprehensive Point of Sale (POS) system with interactive features, inventory management, CRM, employee management, reporting, and Gemini AI integration for smart suggestions, description generation, and report summarization. Supports English and Bahasa Malaysia.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}

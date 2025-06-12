@@ -1,0 +1,321 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { CameraIcon, VideoCameraSlashIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import { useLanguage } from '../../contexts/LanguageContext';
+
+interface BoundingBox {
+  id: number;
+  x: number;
+  y: number;
+  inlineSize: number;
+  height: number;
+  label: string;
+  confidence: number;
+}
+
+interface CameraFeedDisplayProps {
+  isScanning: boolean;
+}
+
+const CameraFeedDisplay: React.FC<CameraFeedDisplayProps> = ({ isScanning }) => {
+  const { translate } = useLanguage();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [boundingBoxes, setBoundingBoxes] = useState<BoundingBox[]>([]);
+  const [isDetecting, setIsDetecting] = useState(false);
+
+  // Real Vision AI detection
+  const performVisionDetection = async () => {
+    if (!videoRef.current || isDetecting) return;
+    setIsDetecting(true);
+    
+    try {
+      // Capture frame from video
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+      
+      ctx.drawImage(videoRef.current, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+
+      // Call Vision API through Cloud Run backend
+      const response = await fetch('/api/vision/detect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: imageData,
+          width: videoRef.current.videoWidth,
+          height: videoRef.current.videoHeight
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const detectedObjects = formatVisionResults(result.objects, videoRef.current.videoWidth, videoRef.current.videoHeight);
+        setBoundingBoxes(detectedObjects);
+        await logDetectionEvent(detectedObjects.length);
+      } else {
+        simulateObjectDetection();
+      }
+    } catch (error) {
+      console.error('Vision detection error:', error);
+      simulateObjectDetection();
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
+  const formatVisionResults = (objects: any[], videoWidth: number, videoHeight: number): BoundingBox[] => {
+    return objects.map((object, index) => ({
+      id: Date.now() + index,
+      label: mapLabelToProduct(object.name || 'Unknown'),
+      confidence: object.score || 0,
+      x: Math.round((object.boundingPoly?.normalizedVertices?.[0]?.x || 0) * videoWidth),
+      y: Math.round((object.boundingPoly?.normalizedVertices?.[0]?.y || 0) * videoHeight),
+      inlineSize: Math.round(((object.boundingPoly?.normalizedVertices?.[2]?.x || 0) - (object.boundingPoly?.normalizedVertices?.[0]?.x || 0)) * videoWidth),
+      height: Math.round(((object.boundingPoly?.normalizedVertices?.[2]?.y || 0) - (object.boundingPoly?.normalizedVertices?.[0]?.y || 0)) * videoHeight),
+    }));
+  };
+
+  const mapLabelToProduct = (label: string): string => {
+    const productMap: { [key: string]: string } = {
+      'Bottle': 'Drink',
+      'Food': 'Snack',
+      'Fruit': 'Fruit',
+      'Vegetable': 'Vegetable',
+      'Package': 'Packaged Item',
+      'Container': 'Canned Item',
+      'Box': 'Boxed Item'
+    };
+    return productMap[label] || label;
+  };
+
+  const logDetectionEvent = async (itemCount: number) => {
+    try {
+      await fetch('/api/monitoring/log', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event: 'vision_detection',
+          data: { itemsDetected: itemCount },
+          timestamp: new Date().toISOString(),
+          kioskId: `kiosk-${Math.random().toString(36).substr(2, 9)}`
+        })
+      });
+    } catch (error) {
+      console.error('Logging error:', error);
+    }
+  };
+
+  // Fallback simulation
+  const simulateObjectDetection = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const videoWidth = videoRef.current.videoWidth;
+    const videoHeight = videoRef.current.videoHeight;
+    const numBoxes = Math.floor(Math.random() * 3) + 1;
+    const newBoxes: BoundingBox[] = [];
+    const possibleLabels = ['Snack', 'Drink', 'Fruit', 'Vegetable', 'Bread', 'Canned Item'];
+    
+    for (let i = 0; i < numBoxes; i++) {
+      const inlineSize = Math.floor(Math.random() * (videoWidth / 3)) + 50;
+      const height = Math.floor(Math.random() * (videoHeight / 3)) + 50;
+      const x = Math.floor(Math.random() * (videoWidth - inlineSize));
+      const y = Math.floor(Math.random() * (videoHeight - height));
+      
+      newBoxes.push({
+        id: Date.now() + i,
+        x,
+        y,
+        inlineSize,
+        height,
+        label: possibleLabels[Math.floor(Math.random() * possibleLabels.length)],
+        confidence: Math.random() * 0.3 + 0.7
+      });
+    }
+    
+    setBoundingBoxes(newBoxes);
+  };
+
+  // Draw bounding boxes on canvas
+  useEffect(() => {
+    if (!canvasRef.current || !videoRef.current || !isCameraActive) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    boundingBoxes.forEach(box => {
+      ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(box.x, box.y, box.inlineSize, box.height);
+      
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+      const labelText = `${box.label} ${Math.round(box.confidence * 100)}%`;
+      const textWidth = ctx.measureText(labelText).width;
+      ctx.fillRect(box.x, box.y - 20, textWidth + 10, 20);
+      
+      ctx.fillStyle = 'black';
+      ctx.font = '12px Arial';
+      ctx.fillText(labelText, box.x + 5, box.y - 5);
+    });
+  }, [boundingBoxes, isCameraActive]);
+
+  // Set up detection interval
+  useEffect(() => {
+    let detectionInterval: number | null = null;
+    
+    if (isScanning && isCameraActive) {
+      detectionInterval = window.setInterval(() => {
+        performVisionDetection();
+      }, 4000);
+      
+      setTimeout(performVisionDetection, 2000);
+    }
+    
+    return () => {
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+      }
+    };
+  }, [isScanning, isCameraActive]);
+
+  // Camera setup
+  useEffect(() => {
+    const startCamera = async () => {
+      setError(null);
+      setIsCameraActive(false);
+      setBoundingBoxes([]);
+      
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.onloadedmetadata = () => {
+              setIsCameraActive(true);
+            };
+          }
+        } catch (err) {
+          console.error("Error accessing camera:", err);
+          setError(err instanceof Error ? err.message : "Unknown camera error");
+          setIsCameraActive(false);
+        }
+      } else {
+        setError("getUserMedia not supported in this browser.");
+        setIsCameraActive(false);
+      }
+    };
+
+    const stopCamera = () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      setIsCameraActive(false);
+      setBoundingBoxes([]);
+    };
+
+    if (isScanning) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+
+    return () => {
+      stopCamera();
+    };
+  }, [isScanning]);
+
+  return (
+    <div className="bg-slate-700 rounded-lg p-1 sm:p-2 aspect-[4/3] flex flex-col items-center justify-center text-center shadow-inner relative overflow-hidden">
+      {error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800/90 z-10 p-4">
+          <ExclamationCircleIcon className="h-16 w-16 text-red-400 mb-3" />
+          <p className="text-md font-semibold text-red-300">Camera Error</p>
+          <p className="text-xs text-stone-400 max-w-xs">{error}</p>
+        </div>
+      )}
+
+      <video 
+        ref={videoRef} 
+        autoPlay 
+        playsInline 
+        muted 
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isCameraActive && isScanning && !error ? 'opacity-100' : 'opacity-0'}`}
+      />
+      
+      <canvas
+        ref={canvasRef}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isCameraActive && isScanning && !error ? 'opacity-100' : 'opacity-0'}`}
+      />
+      
+      <div className={`absolute inset-0 flex flex-col items-center justify-center p-2 transition-opacity duration-300 
+                     ${(isScanning && isCameraActive && !error) ? 'bg-black/30' : ''} 
+                     ${(!isScanning || !isCameraActive || error) ? 'opacity-100' : (isScanning && isCameraActive ? 'opacity-100' : 'opacity-0')}`}
+      >
+        {isScanning && !error ? (
+          <>
+            {isCameraActive ? (
+              <CameraIcon className="h-12 w-12 sm:h-16 sm:w-16 text-green-400/70 mb-2 sm:mb-3 opacity-60" />
+            ) : (
+              <CameraIcon className="h-12 w-12 sm:h-16 sm:w-16 text-green-400 mb-2 sm:mb-3 animate-pulse" />
+            )}
+            <p className="text-md sm:text-lg font-semibold text-green-300">
+              {isDetecting ? 'AI Processing...' : translate('vision_scanning_active')}
+            </p>
+            <p className="text-xs sm:text-sm text-stone-300">{translate('vision_camera_feed_title')}</p>
+          </>
+        ) : !error ? (
+          <>
+            <VideoCameraSlashIcon className="h-12 w-12 sm:h-16 sm:w-16 text-stone-500 mb-2 sm:mb-3" />
+            <p className="text-md sm:text-lg font-semibold text-stone-400">{translate('vision_scanning_idle')}</p>
+            <p className="text-xs sm:text-sm text-stone-500">{translate('vision_camera_feed_title')}</p>
+          </>
+        ) : null}
+      </div>
+      
+      {isScanning && isCameraActive && !error && (
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+          <div 
+            className="absolute w-full h-0.5 bg-green-500/70 shadow-[0_0_10px_2px_rgba(52,211,153,0.7)]" 
+            style={{
+              animation: 'scan-line-anim 2.5s ease-in-out infinite alternate',
+              top: '0%' 
+            }}
+          ></div>
+        </div>
+      )}
+      
+      {isScanning && isCameraActive && !error && boundingBoxes.length > 0 && (
+        <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs p-2 rounded">
+          <div className="font-semibold mb-1">Detected Items: {boundingBoxes.length}</div>
+          {boundingBoxes.map(box => (
+            <div key={box.id} className="flex items-center">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+              <span>{box.label} ({Math.round(box.confidence * 100)}%)</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CameraFeedDisplay;

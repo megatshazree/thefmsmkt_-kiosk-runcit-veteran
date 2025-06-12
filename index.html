@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THEFMSMKT POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+          --theme-bg-deep-space: #112C70;
+          --theme-panel-bg: #0A2353;
+          --theme-panel-bg-alt: #10204F; 
+          --theme-input-bg: #071A3F;
+
+          --theme-accent-purple: #5B58EB;
+          --theme-accent-magenta: #BB63FF;
+          --theme-accent-cyan: #56E1E9;
+          
+          /* This is the dynamically changeable primary color */
+          --theme-primary-color: var(--theme-accent-purple); 
+
+          --theme-text-primary: #FFFFFF;
+          --theme-text-secondary: #E0E7FF;
+          --theme-text-muted: #A0A7C0;
+          --theme-border-color: #2E4B85;
+          --theme-focus-ring: var(--theme-accent-cyan);
+
+          --color-success: #22c55e; /* green-500 */
+          --color-warning: #f59e0b; /* amber-500 */
+          --color-danger: #ef4444;  /* red-500 */
+          --color-info: #3b82f6;   /* blue-500 */
+
+          /* CosyPOS Pastel Palette */
+          --theme-pastel-mint: #CFDDDB;
+          --theme-pastel-lavender: #E4CDED;
+          --theme-pastel-blue: #C2DBE9;
+          --theme-pastel-pink: #F1C8D0;
+          --theme-pastel-periwinkle: #C9CAEF;
+          --theme-pastel-peach: #F8D9C4;
+          --theme-pastel-sky: #AEEEEE;
+          --theme-pastel-lime: #E0FFCD;
+          --theme-text-on-pastel: #1F2937; /* Dark gray for text on pastel backgrounds */
+        }
+        
+        * {
+            transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+
+
+        body { 
+          font-family: 'Inter', sans-serif; 
+          background-color: var(--theme-bg-deep-space);
+          color: var(--theme-text-primary);
+        }
+        .sidebar-item-active { background-color: var(--theme-primary-color); color: var(--theme-text-primary); }
+        .sidebar-item-inactive:hover { background-color: var(--theme-panel-bg-alt); }
+        
+        .kiosk-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .kiosk-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.15); }
+        
+        .gemini-btn-loader { 
+          border: 4px solid var(--theme-panel-bg-alt); 
+          border-top: 4px solid var(--theme-primary-color); 
+          border-radius: 50%; 
+          width: 20px; 
+          height: 20px; 
+          animation: spin 1s linear infinite; 
+          display: inline-block; 
+          margin-right: 8px; 
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .recharts-tooltip-wrapper {
+            background-color: var(--theme-panel-bg) !important;
+            border: 1px solid var(--theme-border-color) !important;
+            border-radius: 0.375rem !important;
+            color: var(--theme-text-primary) !important;
+        }
+        .recharts-legend-item-text {
+            color: var(--theme-text-secondary) !important;
+        }
+         .recharts-cartesian-axis-tick-value tspan {
+            fill: var(--theme-text-muted) !important;
+        }
+        .toggle-checkbox:checked {
+          right: 0;
+          border-color: var(--theme-primary-color);
+          background-color: var(--theme-primary-color);
+        }
+        .toggle-checkbox:checked + .toggle-label {
+          background-color: var(--theme-primary-color);
+          border-color: var(--theme-primary-color);
+        }
+        .kiosk-input { /* For KioskInput component, applying theme variables */
+            background-color: var(--theme-input-bg);
+            border-color: var(--theme-border-color);
+            color: var(--theme-text-primary);
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .kiosk-input::placeholder {
+            color: var(--theme-text-muted);
+        }
+        .kiosk-input:focus {
+            border-color: var(--theme-focus-ring) !important; /* Use !important to ensure override */
+            box-shadow: 0 0 0 3px rgba(var(--theme-focus-ring-rgb, 86, 225, 233), 0.3) !important; /* Assuming --theme-focus-ring is #56E1E9 (cyan) */
+            outline: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--theme-panel-bg-alt); border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--theme-border-color); }
+
+        /* Page content fade-in animation */
+        .page-fade-enter {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        .page-fade-enter-active {
+          opacity: 1;
+          transform: translateY(0);
+          transition: opacity 300ms ease-out, transform 300ms ease-out;
+        }
+        #content-area > div { /* Target direct children of content-area for page-level fade-in */
+            animation: contentFadeIn 0.4s ease-out forwards;
+        }
+        @keyframes contentFadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Modal Animations */
+        .modal-enter {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        .modal-enter-active {
+          opacity: 1;
+          transform: scale(1);
+          transition: opacity 200ms ease-out, transform 200ms ease-out;
+        }
+        .modal-exit {
+          opacity: 1;
+          transform: scale(1);
+        }
+        .modal-exit-active {
+          opacity: 0;
+          transform: scale(0.95);
+          transition: opacity 150ms ease-in, transform 150ms ease-in;
+        }
+        
+        /* Clear search button style */
+        .clear-search-button {
+            position: absolute;
+            right: 0.75rem; /* Tailwind's pr-3 is 0.75rem */
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--theme-text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        .clear-search-button:hover {
+            color: var(--theme-text-primary);
+        }
+
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.6.2",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "@heroicons/react/": "https://esm.sh/@heroicons/react@^2.2.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.4.0",
+    "recharts": "https://esm.sh/recharts@^2.15.3"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-[var(--theme-bg-deep-space)] text-[var(--theme-text-primary)]">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
