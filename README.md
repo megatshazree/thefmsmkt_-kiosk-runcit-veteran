@@ -126,7 +126,7 @@ This application requires a Google Gemini API key to function correctly.
 │   ├── CartContext.tsx
 │   ├── LanguageContext.tsx
 │   ├── NavigationContext.tsx
-│   └── ToastContext.tsx
+│   └── ToastContext.tsx (legacy, replaced by store/toastStore)
 ├── pages/                  # Page-level components (routed components)
 │   ├── DashboardPage.tsx
 │   ├── POS/                # POS specific pages (POSPage, etc.) and related components (ProductGrid, CartDisplay)
@@ -147,6 +147,8 @@ This application requires a Google Gemini API key to function correctly.
 ├── metadata.json           # Project metadata, permissions for camera
 └── README.md               # This file
 ```
+
+> **Note:** Toast notifications are now managed using Zustand via `useToastStore` in `store/toastStore.ts`. Do not use `ToastContext` or `useToast` from contexts anymore.
 
 ## Key Functionalities & AI Usage
 

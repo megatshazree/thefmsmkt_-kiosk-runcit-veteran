@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { ProductSet } from '../../types';
-import { useCart } from '../../contexts/CartContext';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useCartStore } from '../../store/cartStore';
+import { useLanguageStore } from '../../store/languageStore';
 import KioskButton from '../../components/common/KioskButton';
 import { mockProducts } from '../../constants/mockData'; 
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 import { RectangleStackIcon } from '@heroicons/react/24/outline';
 
 interface ProductSetCardProps {
@@ -13,9 +12,9 @@ interface ProductSetCardProps {
 }
 
 const ProductSetCard: React.FC<ProductSetCardProps> = ({ productSet }) => {
-  const { translate } = useLanguage();
-  const { addToCart } = useCart();
-  const { showToast } = useToast();
+  const { translate } = useLanguageStore();
+  const { addToCart } = useCartStore();
+  const { showToast } = useToastStore();
 
   const handleAddSetToCart = React.useCallback(() => {
     let itemsAddedCount = 0;

@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo, useCallback } from 'react';
 import PageHeader from '../../components/common/PageHeader';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useLanguageStore } from '../../store/languageStore';
 import { summarizeReportData } from '../../services/geminiService';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 import KioskButton from '../../components/common/KioskButton';
 import { SalesDataPoint, CategorySalesDataPoint, TopSellingProductDataPoint, SalesByEmployeeDataPoint, PaymentMethodDataPoint, ReportTimeRange } from '../../types';
 import SalesChart from './SalesChart';
@@ -16,8 +15,8 @@ import {
 type ReportType = 'overview' | 'product' | 'employee' | 'payment';
 
 const ReportsPage: React.FC = () => {
-  const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { translate } = useLanguageStore();
+  const { showToast } = useToastStore();
   
   const [activeReportType, setActiveReportType] = useState<ReportType>('overview');
   const [activeDateRange, setActiveDateRange] = useState<ReportTimeRange>(ReportTimeRange.DAILY);
@@ -66,7 +65,7 @@ const ReportsPage: React.FC = () => {
         break;
     }
     
-    showToast(translate('toast_report_summary_generating'), 'info', isSummarizing[reportType] ? 60000 : 3000); // Longer toast if already summarizing
+    showToast(translate('toast_report_summary_generating'), 'info');
     const result = await summarizeReportData(reportDataString);
 
     setIsSummarizing(prev => ({ ...prev, [reportType]: false }));
@@ -189,6 +188,8 @@ const ReportsPage: React.FC = () => {
               role="tab"
               aria-selected={activeReportType === tab.key}
               aria-controls={`report-content-${tab.key}`}
+              tabIndex={activeReportType === tab.key ? 0 : -1}
+              id={`tab-${tab.key}`}
             >
               {translate(tab.labelKey)}
             </KioskButton>
@@ -230,7 +231,8 @@ const ReportsPage: React.FC = () => {
         )}
       </div>
 
-      <div id={`report-content-${activeReportType}`} role="tabpanel">
+
+      <div id={`report-content-${activeReportType}`} role="tabpanel" aria-labelledby={`tab-${activeReportType}`}>
         {activeReportType === 'overview' && renderOverviewReports()}
         {activeReportType === 'product' && renderProductPerformanceReports()}
         {activeReportType === 'employee' && renderEmployeePerformanceReports()}
@@ -238,7 +240,7 @@ const ReportsPage: React.FC = () => {
       </div>
 
     </div>
-  );
-};
+
+  );};
 
 export default React.memo(ReportsPage);

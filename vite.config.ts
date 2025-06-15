@@ -5,15 +5,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   
   // Runtime check for API key presence
-  if (!env.GEMINI_API_KEY) {
+  if (!env.VITE_GEMINI_API_KEY) {
     // eslint-disable-next-line no-console
-    console.warn('Warning: GEMINI_API_KEY is missing from environment variables. Some features may not work.');
+    console.warn('Warning: VITE_GEMINI_API_KEY is missing from environment variables. Some features may not work.');
   }
 
   return {
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY)
     },
     resolve: {
       alias: {
@@ -42,78 +42,13 @@ export default defineConfig(({ mode }) => {
           }
           warn(warning);
         },
+        // Fix module initialization issues
+        external: [],
         output: {
-          // More granular chunk splitting
-          manualChunks: (id) => {
-            // Node modules chunking
-            if (id.includes('node_modules')) {
-              // React ecosystem
-              if (id.includes('react') || id.includes('react-dom')) {
-                return 'react-vendor';
-              }
-              
-              // Router
-              if (id.includes('react-router')) {
-                return 'router';
-              }
-              
-              // Framer Motion
-              if (id.includes('framer-motion')) {
-                return 'motion';
-              }
-              
-              // Heroicons
-              if (id.includes('@heroicons')) {
-                return 'icons';
-              }
-              
-              // Headless UI
-              if (id.includes('@headlessui')) {
-                return 'headless-ui';
-              }
-              
-              // Other vendor libraries
-              return 'vendor';
-            }
-            
-            // Application code chunking by feature
-            if (id.includes('/pages/')) {
-              if (id.includes('/POS/')) {
-                return 'pos-pages';
-              }
-              if (id.includes('/VisionCheckout/')) {
-                return 'vision-pages';
-              }
-              if (id.includes('/Inventory/')) {
-                return 'inventory-pages';
-              }
-              if (id.includes('/CRM/')) {
-                return 'crm-pages';
-              }
-              if (id.includes('/Reports/')) {
-                return 'reports-pages';
-              }
-              if (id.includes('/Employee/')) {
-                return 'employee-pages';
-              }
-              if (id.includes('/ProductSet/')) {
-                return 'productset-pages';
-              }
-              return 'other-pages';
-            }
-            
-            // Components chunking
-            if (id.includes('/components/')) {
-              if (id.includes('/ui/')) {
-                return 'ui-components';
-              }
-              return 'components';
-            }
-            
-            // Contexts and hooks
-            if (id.includes('/contexts/') || id.includes('/hooks/')) {
-              return 'app-logic';
-            }
+          // Simplified chunk splitting to avoid dependency issues
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            router: ['react-router-dom'],
           }
         }
       }

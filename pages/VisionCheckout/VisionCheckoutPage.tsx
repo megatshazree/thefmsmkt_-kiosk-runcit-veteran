@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import KioskButton from '../../components/common/KioskButton';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useCart } from '../../contexts/CartContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
+import { useLanguageStore } from '../../store/languageStore';
+import { useCartStore } from '../../store/cartStore';
 import { Product, RecognizedItem, Customer } from '../../types'; // Added Customer
 import { mockProducts } from '../../constants/mockData';
 import CameraFeedDisplay from './CameraFeedDisplay';
@@ -20,9 +19,9 @@ import { UserCircleIcon, CheckBadgeIcon } from '@heroicons/react/24/outline';
 type PageState = 'idle' | 'scanning' | 'ambiguity_check' | 'weight_check' | 'age_verification_needed' | 'payment_processing';
 
 const VisionCheckoutPage: React.FC = () => {
-  const { translate } = useLanguage();
-  const { addToCart: addToMainCart, clearCart: clearMainCart } = useCart(); // From main app cart context
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
+  const { translate } = useLanguageStore();
+  const { addToCart: addToMainCart, clearCart: clearMainCart } = useCartStore();
   const navigate = useNavigate();
 
   const [pageState, setPageState] = useState<PageState>('idle');
@@ -290,7 +289,7 @@ const VisionCheckoutPage: React.FC = () => {
        const productDetails: Product = mockProducts.find(p => p.id === item.id)!;
        const cartItemPayload: any = { // Build a valid CartItem like structure
            ...productDetails,
-           quantity: 1, // We add one by one to cart context for simplicity
+           quantity: 1, // We add one by one to cart context for payment modal
        };
        if (item.weight !== undefined && item.requiresScale && item.pricePerUnit) {
            cartItemPayload.price = item.pricePerUnit * item.weight; // Price for this single weighed unit

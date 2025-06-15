@@ -27,7 +27,7 @@ app.post('/api/vision/detect', async (req, res) => {
       return res.status(400).json({ error: 'Image data required' });
     }
 
-    // Use the correct method name and structure
+    // Accept base64 string, decode to Buffer
     const [result] = await visionClient.objectLocalization({
       image: { 
         content: Buffer.from(image, 'base64')

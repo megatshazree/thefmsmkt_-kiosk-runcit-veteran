@@ -23,29 +23,28 @@ app.get('/health', (req, res) => {
 // Vision AI endpoint
 app.post('/api/vision/detect', async (req, res) => {
   try {
-    const { image, width, height } = req.body;
-    
+    const { image } = req.body;
     if (!image) {
       return res.status(400).json({ error: 'Image data required' });
     }
-
+    // Accept base64 string, decode to Buffer
     const [result] = await visionClient.objectLocalization({
-      image: { content: image },
+      image: { content: Buffer.from(image, 'base64') }
     });
-
     const objects = result.localizedObjectAnnotations || [];
-    
     res.json({
       objects: objects.map(obj => ({
-        name: obj.name,
-        score: obj.score,
+        name: obj.name || 'Unknown',
+        score: obj.score || 0,
         boundingPoly: obj.boundingPoly
       }))
     });
-
   } catch (error) {
     console.error('Vision API error:', error);
-    res.status(500).json({ error: 'Vision detection failed' });
+    res.status(500).json({
+      error: 'Vision detection failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
@@ -53,13 +52,11 @@ app.post('/api/vision/detect', async (req, res) => {
 app.post('/api/monitoring/log', async (req, res) => {
   try {
     const { event, data, timestamp, kioskId, userId } = req.body;
-    
     const log = logging.log('kiosk-events');
     const metadata = {
       resource: { type: 'cloud_run_revision' },
       severity: 'INFO',
     };
-    
     const entry = log.entry(metadata, {
       event,
       data,
@@ -67,16 +64,19 @@ app.post('/api/monitoring/log', async (req, res) => {
       kioskId,
       userId
     });
-    
     await log.write(entry);
     res.json({ success: true });
-
   } catch (error) {
     console.error('Logging error:', error);
-    res.status(500).json({ error: 'Logging failed' });
+    res.status(500).json({
+      error: 'Logging failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
 app.listen(port, () => {
+  console.log(`Kiosk API server running on port ${port}`);
+});
   console.log(`Kiosk API server running on port ${port}`);
 });

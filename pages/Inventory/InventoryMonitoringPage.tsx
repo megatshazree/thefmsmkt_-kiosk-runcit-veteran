@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import KioskButton from '../../components/common/KioskButton';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 import { Product } from '../../types';
 import { mockProducts, shelfLayoutConfig } from '../../constants/mockData';
 import ShelfDisplay from '../../components/inventory/ShelfDisplay';
@@ -11,7 +11,7 @@ import MisplacedItemsPanel from '../../components/inventory/MisplacedItemsPanel'
 
 const InventoryMonitoringPage: React.FC = () => {
   const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
 
   const [isMonitoringActive, setIsMonitoringActive] = useState(false);
   // Initialize with mockProducts, this will be the "live" data
@@ -49,7 +49,7 @@ const InventoryMonitoringPage: React.FC = () => {
             const productToChange = updatedProducts[productIndexToChange];
             if (productToChange.stock > 0 && Math.random() < 0.3) { // 30% chance to decrease stock
               productToChange.stock = Math.max(0, productToChange.stock - Math.floor(Math.random() * 3 + 1)); // Decrease by 1-3
-              showToast(translate('toast_stock_updated_sim', { itemName: productToChange.name, stockCount: productToChange.stock }), 'info', 2000);
+              showToast(translate('toast_stock_updated_sim', { itemName: productToChange.name, stockCount: productToChange.stock }), { type: 'info', duration: 2000 });
             }
           }
 
@@ -67,7 +67,7 @@ const InventoryMonitoringPage: React.FC = () => {
                 const oldLocation = productToMisplace.currentShelfLocationId;
                 productToMisplace.currentShelfLocationId = newShelf.id + "-SIM"; // Mark as simulated new location
                  if (oldLocation !== productToMisplace.currentShelfLocationId) {
-                    showToast(translate('toast_item_misplaced_sim', {itemName: productToMisplace.name, currentShelf: productToMisplace.currentShelfLocationId || 'N/A', correctShelf: productToMisplace.shelfLocationId || 'N/A'}), 'warning', 3000);
+                    showToast(translate('toast_item_misplaced_sim', {itemName: productToMisplace.name, currentShelf: productToMisplace.currentShelfLocationId || 'N/A', correctShelf: productToMisplace.shelfLocationId || 'N/A'}), { type: 'warning', duration: 3000 });
                  }
              }
           }
@@ -85,8 +85,8 @@ const InventoryMonitoringPage: React.FC = () => {
 
   const handleToggleMonitoring = () => {
     setIsMonitoringActive(prev => {
-      if (!prev) showToast(translate('toast_monitoring_started'), 'success');
-      else showToast(translate('toast_monitoring_stopped'), 'info');
+      if (!prev) showToast(translate('toast_monitoring_started'), { type: 'success' });
+      else showToast(translate('toast_monitoring_stopped'), { type: 'info' });
       return !prev;
     });
   };

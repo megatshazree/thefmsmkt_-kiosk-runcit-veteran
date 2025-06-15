@@ -1,13 +1,12 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import PageHeader from '../../components/common/PageHeader';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useLanguageStore } from '../../store/languageStore';
 import { mockEmployeesData } from '../../constants/mockData';
 import KioskInput from '../../components/common/KioskInput';
 import KioskButton from '../../components/common/KioskButton';
 import { Employee } from '../../types';
 import EmployeeModal from './EmployeeModal';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 import { CubeTransparentIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import useDebounce from '../../hooks/useDebounce';
 
@@ -17,7 +16,7 @@ const EmployeeTable: React.FC<{
     onDelete: (employeeId: string) => void;
     searchTerm: string;
 }> = React.memo(({ employees, onEdit, onDelete, searchTerm }) => {
-    const { translate } = useLanguage();
+    const { translate } = useLanguageStore();
 
     if (employees.length === 0) {
          return (
@@ -72,8 +71,8 @@ const EmployeeTable: React.FC<{
 
 
 const EmployeePage: React.FC = () => {
-  const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { translate } = useLanguageStore();
+  const { showToast } = useToastStore();
   const [searchTermInput, setSearchTermInput] = useState('');
   const debouncedSearchTerm = useDebounce(searchTermInput, 300);
   const [employees, setEmployees] = useState<Employee[]>(() => [...mockEmployeesData]);

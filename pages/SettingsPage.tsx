@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { SelectOption, Integration } from '../types';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguageStore } from '../store/languageStore';
+import { useTheme } from '../src/contexts/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/common/PageHeader';
 import SettingsCard from '../components/settings/SettingsCard';
 import KioskInput from '../components/common/KioskInput';
@@ -14,7 +16,8 @@ import {
     CheckIcon, 
     AdjustmentsHorizontalIcon, 
     LinkIcon, 
-    PaintBrushIcon 
+    PaintBrushIcon, 
+    SwatchIcon 
 } from '@heroicons/react/24/outline'; 
 
 const themeColorOptions = [
@@ -49,7 +52,9 @@ const integrationIcons: Record<string, React.ReactElement> = {
 };
 
 const SettingsPage: React.FC = () => {
-  const { translate } = useLanguage();
+  const { translate } = useLanguageStore();
+  const { currentTheme, theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   
   const [storeName, setStoreName] = useState('THEFMSMKT POS');
   const [contactNumber, setContactNumber] = useState('+60 12-345 6789');
@@ -184,6 +189,41 @@ const SettingsPage: React.FC = () => {
               </div>
               <SettingsSelect label="Application Font Family" id="fontFamily" options={memoizedFontOptions} value={selectedFont} onChange={handleFontChange} />
               <SettingsSelect label="Receipt Template Style" id="receiptTemplate" options={memoizedReceiptTemplates} value={selectedReceipt} onChange={e => setSelectedReceipt(e.target.value)} />
+            </div>
+          </SettingsCard>
+
+          <SettingsCard title="Theme System" className="border border-[var(--theme-border-color)]">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-[var(--theme-text-primary)]">Current Theme</h4>
+                  <p className="text-sm text-[var(--theme-text-secondary)]">{theme.displayName}</p>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--theme-acceleration)] to-[var(--theme-bootcamp)]" />
+              </div>
+              
+              <div className="flex gap-2">
+                <KioskButton
+                  variant="secondary"
+                  onClick={toggleTheme}
+                  className="flex-1 text-sm"
+                >
+                  <SwatchIcon className="h-4 w-4 mr-2" />
+                  Quick Toggle
+                </KioskButton>
+                <KioskButton
+                  variant="primary"
+                  onClick={() => navigate('/settings/theme')}
+                  className="flex-1 text-sm"
+                >
+                  <PaintBrushIcon className="h-4 w-4 mr-2" />
+                  Advanced
+                </KioskButton>
+              </div>
+              
+              <div className="text-xs text-[var(--theme-text-muted)]">
+                Access the full theme customization panel for advanced options
+              </div>
             </div>
           </SettingsCard>
         </div>

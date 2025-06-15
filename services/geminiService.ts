@@ -1,9 +1,9 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { GeminiResponse, AnonymizedCustomerAnalytics, CartItem, SupplierInfo, BuyerInfo, EInvoiceDetails, EInvoiceLineItem } from '../types';
+import { config } from '../src/config/environment';
 
-// API_KEY is assumed to be set in the environment as process.env.API_KEY
-// The GoogleGenAI client must be initialized with the API key directly from the environment.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize GoogleGenAI with API key from environment configuration
+const ai = config.gemini.apiKey ? new GoogleGenAI({ apiKey: config.gemini.apiKey }) : null;
 const textModel = 'gemini-2.5-flash-preview-04-17';
 const imageGenerationModel = 'imagen-3.0-generate-002';
 
@@ -24,6 +24,10 @@ const parseJsonFromText = (text: string): any => {
 
 
 export const generateProductDescription = async (productName: string, category: string, keywords: string): Promise<GeminiResponse<string>> => {
+  if (!ai) {
+    return { data: null, error: "Gemini AI is not configured. Please set VITE_GEMINI_API_KEY." };
+  }
+  
   const prompt = `Anda adalah pembantu AI untuk sistem POS. Jana deskripsi produk yang menarik dan ringkas (sekitar 2-3 ayat) untuk produk berikut:\nNama Produk: ${productName}\nKategori: ${category || 'Tidak dinyatakan'}\nKata Kunci: ${keywords || 'Tiada'}\n\nFormatkan deskripsi dengan baik. Berikan hanya deskripsi produk, tanpa pengenalan tambahan.`;
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../components/common/Modal';
 import KioskButton from '../../components/common/KioskButton';
 import KioskInput from '../../components/common/KioskInput';
-import { useLanguage } from '../../contexts/LanguageContext';
 import { Product } from '../../types';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
+import { useLanguageStore } from '../../store/languageStore';
+import { useCartStore } from '../../store/cartStore';
 
 interface QuickAddProductModalProps {
   isOpen: boolean;
@@ -14,8 +15,9 @@ interface QuickAddProductModalProps {
 }
 
 const QuickAddProductModal: React.FC<QuickAddProductModalProps> = ({ isOpen, onClose, onSave, existingCategories }) => {
-  const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
+  const { translate } = useLanguageStore();
+  const { addToCart } = useCartStore();
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState(existingCategories[0] || '');
@@ -72,6 +74,7 @@ const QuickAddProductModal: React.FC<QuickAddProductModalProps> = ({ isOpen, onC
       simulatedVisionLabels: [finalCategory, name.split(' ')[0]],
     };
     onSave(newProduct);
+    addToCart(newProduct); // Add the new product to the cart
   };
 
   return (

@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useAuthStore } from '../store/authStore';
+import { useLanguageStore } from '../store/languageStore';
 import KioskInput from '../components/common/KioskInput';
 import KioskButton from '../components/common/KioskButton';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline'; // Using a different icon
@@ -14,8 +13,8 @@ const LoginScreen: React.FC = () => {
   const [loginTimestamp, setLoginTimestamp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
-  const { translate } = useLanguage();
+  const { login } = useAuthStore();
+  const { translate } = useLanguageStore();
   const navigate = useNavigate();
 
   const updateTimestamp = () => {

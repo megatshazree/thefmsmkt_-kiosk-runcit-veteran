@@ -1,18 +1,109 @@
-rules_version='2'
+rules_version = '2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasAnyRole(roles) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles;
+    }
+
+    // Users collection - admin and self-access only
+    match /users/{userId} {
+      allow read: if isOwner(userId) || hasRole('admin');
+      allow write: if hasRole('admin');
+      allow create: if hasRole('admin');
+      allow delete: if hasRole('admin');
+    }
+
+    // Products collection - authenticated users can read, admin/manager can write
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if hasAnyRole(['admin', 'manager']);
+      allow create: if hasAnyRole(['admin', 'manager']);
+      allow delete: if hasRole('admin');
+    }
+
+    // Inventory collection - role-based access
+    match /inventory/{inventoryId} {
+      allow read: if isAuthenticated();
+      allow write: if hasAnyRole(['admin', 'manager', 'cashier']);
+      allow create: if hasAnyRole(['admin', 'manager', 'cashier']);
+      allow delete: if hasAnyRole(['admin', 'manager']);
+    }
+
+    // Transactions collection - cashiers and above can read/write
+    match /transactions/{transactionId} {
+      allow read: if hasAnyRole(['admin', 'manager', 'cashier']);
+      allow write: if hasAnyRole(['admin', 'manager', 'cashier']);
+      allow create: if hasAnyRole(['admin', 'manager', 'cashier']);
+      allow delete: if hasRole('admin');
+    }
+
+    // Customers collection - authenticated users can read, cashiers+ can write
+    match /customers/{customerId} {
+      allow read: if isAuthenticated();
+      allow write: if hasAnyRole(['admin', 'manager', 'cashier']);
+      allow create: if hasAnyRole(['admin', 'manager', 'cashier']);
+      allow delete: if hasAnyRole(['admin', 'manager']);
+    }
+
+    // Employee collection - admin only
+    match /employees/{employeeId} {
+      allow read: if hasAnyRole(['admin', 'manager']);
+      allow write: if hasRole('admin');
+      allow create: if hasRole('admin');
+      allow delete: if hasRole('admin');
+    }
+
+    // Purchase Orders - manager and above
+    match /purchaseOrders/{poId} {
+      allow read: if hasAnyRole(['admin', 'manager', 'cashier']);
+      allow write: if hasAnyRole(['admin', 'manager']);
+      allow create: if hasAnyRole(['admin', 'manager']);
+      allow delete: if hasRole('admin');
+    }
+
+    // Product Sets - authenticated users can read, admin/manager can write
+    match /productSets/{setId} {
+      allow read: if isAuthenticated();
+      allow write: if hasAnyRole(['admin', 'manager']);
+      allow create: if hasAnyRole(['admin', 'manager']);
+      allow delete: if hasRole('admin');
+    }
+
+    // Reports collection - admin and manager only
+    match /reports/{reportId} {
+      allow read: if hasAnyRole(['admin', 'manager']);
+      allow write: if hasAnyRole(['admin', 'manager']);
+      allow create: if hasAnyRole(['admin', 'manager']);
+      allow delete: if hasRole('admin');
+    }
+
+    // Settings collection - admin only
+    match /settings/{settingId} {
+      allow read: if hasAnyRole(['admin', 'manager']);
+      allow write: if hasRole('admin');
+      allow create: if hasRole('admin');
+      allow delete: if hasRole('admin');
+    }
+
+    // Deny all other documents
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 7, 12);
+      allow read, write: if false;
     }
   }
 }

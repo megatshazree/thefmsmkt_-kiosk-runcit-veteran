@@ -9,6 +9,7 @@ export interface Product {
   image: string; // Emoji, URL, or data:image/...;base64,... string from Imagen
   stock: number;
   sku?: string; // Optional SKU
+  tags?: string[]; // Optional tags for searching and filtering
 
   // Vision AI Checkout related fields
   isVisuallyAmbiguous?: boolean;

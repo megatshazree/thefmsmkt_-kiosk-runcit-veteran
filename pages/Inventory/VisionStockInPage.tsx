@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import KioskButton from '../../components/common/KioskButton';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 import { Product, PurchaseOrder, StockInScanResult, PurchaseOrderItem } from '../../types';
 import { mockProducts, mockPurchaseOrders } from '../../constants/mockData';
 import PurchaseOrderSelector from '../../components/inventory/PurchaseOrderSelector';
@@ -26,7 +26,7 @@ const usePurchaseOrderSelection = () => {
   const [selectedPoId, setSelectedPoId] = useState<string | null>(null);
   const [currentPO, setCurrentPO] = useState<PurchaseOrder | null>(null);
   const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
 
   useEffect(() => {
     if (selectedPoId) {
@@ -52,7 +52,7 @@ const usePurchaseOrderSelection = () => {
 const useStockInSimulation = (isScanning: boolean, currentPO: PurchaseOrder | null) => {
   const [scanResults, setScanResults] = useState<StockInScanResult[]>([]);
   const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
   const timeoutRefs = useRef<number[]>([]);
 
   const clearAllTimeouts = useCallback(() => {
@@ -257,7 +257,7 @@ const useStockInSimulation = (isScanning: boolean, currentPO: PurchaseOrder | nu
 
 const VisionStockInPage: React.FC = () => {
   const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
   const [isScanning, setIsScanning] = useState(false);
 
   const {

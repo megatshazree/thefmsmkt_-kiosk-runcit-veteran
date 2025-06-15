@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import KioskButton from '../../components/common/KioskButton';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
+import { useLanguageStore } from '../../store/languageStore';
 import { ProductSet } from '../../types';
 import { mockProductSets, mockProducts } from '../../constants/mockData'; // Direct import for mutation
 import CreateProductSetModal from './CreateProductSetModal';
@@ -13,7 +13,7 @@ const ProductSetTable: React.FC<{
   onEdit: (set: ProductSet) => void;
   onDelete: (setId: string) => void;
 }> = ({ productSets, onEdit, onDelete }) => {
-  const { translate } = useLanguage();
+  const { translate } = useLanguageStore();
 
   if (productSets.length === 0) {
     return <p className="text-center py-8 text-lg text-stone-400">{translate('table_no_product_sets')}</p>;
@@ -50,6 +50,7 @@ const ProductSetTable: React.FC<{
               </td>
               <td className="p-3 text-sm whitespace-nowrap">
                 <button 
+                  type="button"
                   onClick={() => onEdit(set)} 
                   className="text-green-400 hover:text-green-300 mr-3 font-medium p-1"
                   aria-label={`${translate('btn_edit')} ${set.name}`}
@@ -57,6 +58,7 @@ const ProductSetTable: React.FC<{
                   <PencilIcon className="h-5 w-5"/>
                 </button>
                 <button 
+                  type="button"
                   onClick={() => onDelete(set.id)} 
                   className="text-red-400 hover:text-red-300 font-medium p-1"
                   aria-label={`${translate('btn_delete')} ${set.name}`}
@@ -73,8 +75,8 @@ const ProductSetTable: React.FC<{
 };
 
 const ProductSetPage: React.FC = () => {
-  const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { translate } = useLanguageStore();
+  const { showToast } = useToastStore();
   
   // Use a state that mirrors mockProductSets to trigger re-renders on this page
   const [productSetsState, setProductSetsState] = useState<ProductSet[]>(() => [...mockProductSets]);

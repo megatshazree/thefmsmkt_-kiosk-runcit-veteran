@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import Modal from '../../components/common/Modal';
 import KioskButton from '../../components/common/KioskButton';
 import KioskInput from '../../components/common/KioskInput';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
+import { useLanguageStore } from '../../store/languageStore';
 import { returnActionTypes } from '../../constants/menuItems';
 import { CartItem } from '../../types'; // For mock transaction items
 
@@ -42,8 +42,8 @@ interface ReturnModalProps {
 }
 
 const ReturnModal: React.FC<ReturnModalProps> = ({ isOpen, onClose, onReturnSuccess }) => {
-  const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
+  const { translate } = useLanguageStore();
   const [receiptSearch, setReceiptSearch] = useState('');
   const [foundTransaction, setFoundTransaction] = useState<MockTransaction | null>(null);
   const [returnAction, setReturnAction] = useState(returnActionTypes[0].value);

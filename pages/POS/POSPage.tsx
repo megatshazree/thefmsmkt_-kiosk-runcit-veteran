@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useCart } from '../../contexts/CartContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useLanguageStore } from '../../store/languageStore';
+import { useCartStore } from '../../store/cartStore';
+import { useToastStore } from '../../store/toastStore';
 import PageHeader from '../../components/common/PageHeader';
-import ProductGrid from './ProductGrid';
-import CartDisplay from './CartDisplay';
+import CosyProductGrid from './CosyProductGrid';
+import CosyCartDisplay from './CosyCartDisplay';
 import PaymentModal from './PaymentModal';
 import ReturnModal from './ReturnModal';
 import KioskButton from '../../components/common/KioskButton';
@@ -16,7 +16,7 @@ import CheckPriceModal from './CheckPriceModal';
 import ApplyDiscountModal from './ApplyDiscountModal';
 import RecallOrderModal from './RecallOrderModal';
 import CustomerSearchModal from './CustomerSearchModal'; 
-import { ArchiveBoxArrowDownIcon, MagnifyingGlassCircleIcon, TagIcon, PlusCircleIcon, ArrowPathRoundedSquareIcon, ArrowsRightLeftIcon, UserPlusIcon, UserMinusIcon, FunnelIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { ArchiveBoxArrowDownIcon, MagnifyingGlassCircleIcon, TagIcon, PlusCircleIcon, ArrowPathRoundedSquareIcon, ArrowsRightLeftIcon, UserPlusIcon, UserMinusIcon, FunnelIcon, SparklesIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import { getStyledCategories } from '../../constants/categoryStyles';
 import useDebounce from '../../hooks/useDebounce'; // Import useDebounce
 import CameraFeedDisplay from '../VisionCheckout/CameraFeedDisplay';
@@ -27,9 +27,9 @@ import Modal from '../../components/common/Modal';
 import { mockProducts } from '../../constants/mockData';
 
 const POSPage: React.FC = () => {
-  const { translate } = useLanguage();
-  const { cartItems, clearCart, addToCart, setCartItems } = useCart(); 
-  const { showToast } = useToast();
+  const { translate } = useLanguageStore();
+  const { cartItems, clearCart, addToCart, setCartItems } = useCartStore(); 
+  const { showToast } = useToastStore();
 
   const [products, setProducts] = useState<Product[]>(() => [...initialMockProducts]);
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('pos_cat_all');
@@ -280,98 +280,153 @@ const POSPage: React.FC = () => {
   ], [handleHoldOrder]);
 
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader
-        title={translate('pos_title')}
-        subtitle={translate('pos_subtitle')}
-        actions={
-          <div className="text-sm text-[var(--theme-text-secondary)]">
-            <span>{translate('pos_cashier')}</span>: <span className="font-semibold text-[var(--theme-text-primary)]">Siti</span> | <span>{translate('pos_current_shift')}</span>: <span className="font-semibold text-[var(--theme-accent-cyan)]">RM 0.00</span>
-            <KioskButton
-              variant="secondary"
-              className="ml-4 text-xs px-2 py-1 !rounded-md"
-              aria-label="Help / Info"
-              title="Help / Info"
-              onClick={() => showToast(translate('pos_help_info'), 'info')}
-            >
-              ?
-            </KioskButton>
+    <div className="flex h-screen bg-[var(--theme-bg-deep-space)]">
+      {/* Left Sidebar Navigation - CosyPOS Style */}
+      <div className="w-64 bg-[var(--theme-panel-bg)] border-r border-[var(--theme-border-color)] flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-[var(--theme-border-color)]">
+          <div className="flex items-center gap-2">
+            <Squares2X2Icon className="h-6 w-6 text-[var(--theme-text-primary)]" />
+            <span className="text-lg font-semibold text-[var(--theme-text-primary)]">THEFMSMKT</span>
           </div>
-        }
-      />
+        </div>
 
-      {/* Sticky Action Bar */}
-      <div className="mb-4 bg-[var(--theme-panel-bg)] p-3 rounded-xl shadow-lg border border-[var(--theme-border-color)] sticky top-0 z-20">
-        <div className="flex flex-wrap gap-2 items-center justify-between">
-          <div className="flex flex-wrap gap-2 items-center">
-            {posActionButtons.map(action => (
-              <KioskButton key={action.labelKey} variant="secondary" onClick={action.onClick} className="text-xs py-2" aria-label={action.aria} title={action.label}>
-                <action.icon className="h-4 w-4 mr-1.5" aria-hidden="true"/>
-                {action.label}
-              </KioskButton>
-            ))}
-          </div>
-          <div className="flex gap-2 items-center">
-            {selectedCustomer ? (
-              <KioskButton variant="danger" onClick={handleClearCustomer} className="text-xs py-2" aria-label="Clear selected customer" title="Buang Pelanggan">
-                <UserMinusIcon className="h-4 w-4 mr-1.5" aria-hidden="true"/>
-                Buang Pelanggan
-              </KioskButton>
-            ) : (
-              <KioskButton variant="secondary" onClick={() => setIsCustomerSearchModalOpen(true)} className="text-xs py-2 !bg-[var(--theme-accent-cyan)] !text-slate-900 hover:!bg-opacity-80 border-none" aria-label="Add or search customer" title="Tambah/Cari Pelanggan">
-                <UserPlusIcon className="h-4 w-4 mr-1.5" aria-hidden="true"/>
-                Tambah/Cari Pelanggan
-              </KioskButton>
-            )}
-          </div>
+        {/* Quick Actions */}
+        <div className="p-4 space-y-2">
+          <div className="text-xs font-medium text-[var(--theme-text-muted)] mb-2">Actions</div>
+          {posActionButtons.slice(0, 6).map(action => (
+            <button
+              key={action.labelKey}
+              onClick={action.onClick}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors text-[var(--theme-text-secondary)] hover:bg-[var(--theme-panel-bg-alt)] hover:text-[var(--theme-text-primary)]"
+              title={action.label}
+            >
+              <action.icon className="h-4 w-4" />
+              <span className="text-sm">{action.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Customer Section */}
+        <div className="p-4 border-t border-[var(--theme-border-color)] mt-auto">
+          <div className="text-xs font-medium text-[var(--theme-text-muted)] mb-2">Customer</div>
+          {selectedCustomer ? (
+            <div className="flex items-center justify-between p-2 bg-[var(--theme-panel-bg-alt)] rounded-lg">
+              <span className="text-sm text-[var(--theme-text-primary)]">{selectedCustomer.name}</span>
+              <button
+                onClick={handleClearCustomer}
+                className="p-1 text-[var(--theme-text-muted)] hover:text-[var(--color-danger)]"
+                title="Clear customer"
+              >
+                <UserMinusIcon className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsCustomerSearchModalOpen(true)}
+              className="w-full flex items-center gap-2 p-2 bg-[var(--theme-acceleration)] text-white rounded-lg hover:bg-[var(--theme-acceleration)]/80 transition-colors"
+            >
+              <UserPlusIcon className="h-4 w-4" />
+              <span className="text-sm">Add Customer</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 flex-grow min-h-0">
-        {/* Left: Product Search & Grid */}
-        <div className="lg:w-[63%] flex flex-col space-y-4 min-h-0">
-          {/* Removed search section title and search bar */}
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* Removed product grid section title */}
-            <ProductGrid 
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header Bar */}
+        <div className="bg-[var(--theme-panel-bg)] border-b border-[var(--theme-border-color)] p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-[var(--theme-text-primary)]">Point of Sale</h1>
+              <div className="flex items-center gap-4 text-sm text-[var(--theme-text-muted)]">
+                <span>Cashier: <span className="text-[var(--theme-text-primary)] font-medium">Siti</span></span>
+                <span>Shift: <span className="text-[var(--theme-acceleration)] font-medium">RM 0.00</span></span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => showToast(translate('pos_help_info'), 'info')}
+                className="p-2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] rounded-lg hover:bg-[var(--theme-panel-bg-alt)]"
+                title="Help"
+              >
+                ?
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-1">
+          {/* Product Area */}
+          <div className="flex-1 p-4">
+            <CosyProductGrid 
               products={products} 
               styledCategories={styledCategories}
               selectedCategoryKey={selectedCategoryKey}
               onCategoryChange={handleCategorySelect}
               searchTerm={debouncedSearchTerm} 
-              className="flex-grow bg-[var(--theme-panel-bg)] p-4 rounded-xl shadow-lg border border-[var(--theme-border-color)]"
+              className="h-full"
             />
           </div>
-        </div>
 
-        {/* Right: Cart & Summary */}
-        <div className="lg:w-[37%] bg-[var(--theme-panel-bg)] p-4 rounded-xl shadow-lg flex flex-col text-[var(--theme-text-primary)] min-h-0 border border-[var(--theme-border-color)] sticky top-20 h-fit">
-          <div className="mb-3 flex items-center justify-between border-b border-[var(--theme-border-color)] pb-2">
-            <span className="text-sm text-[var(--theme-text-secondary)]">Ringkasan</span>
-            <span className="text-xs text-[var(--theme-text-muted)]">{cartItems.length} item</span>
-            <span className="font-semibold text-[var(--theme-accent-cyan)]">RM {cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</span>
-            <KioskButton
-              variant="primary"
-              className="ml-2 text-xs px-3 py-1 !rounded-md"
-              aria-label={translate('pos_btn_pay_now')}
-              onClick={() => setIsPaymentModalOpen(true)}
-              disabled={cartItems.length === 0}
-            >
-              Bayar Sekarang
-            </KioskButton>
+          {/* Right: Cart Panel - CosyPOS Style */}
+          <div className="w-80 bg-[var(--theme-panel-bg)] border-l border-[var(--theme-border-color)] flex flex-col">
+            {/* Cart Header */}
+            <div className="p-4 border-b border-[var(--theme-border-color)]">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-semibold text-[var(--theme-text-primary)]">Current Order</h2>
+                <span className="text-sm text-[var(--theme-text-muted)]">{cartItems.length} items</span>
+              </div>
+              {selectedCustomer && (
+                <div className="text-sm text-[var(--theme-acceleration)]">Customer: {selectedCustomer.name}</div>
+              )}
+            </div>
+
+            {/* Cart Items */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <CosyCartDisplay 
+                selectedCustomer={selectedCustomer}
+                onPayNow={() => setIsPaymentModalOpen(true)}
+                orderDiscountInput={orderDiscountInput}
+                setOrderDiscountInput={setOrderDiscountInput} 
+                appliedOrderDiscountValue={appliedOrderDiscountValue} 
+                setAppliedOrderDiscountValue={setAppliedOrderDiscountValue} 
+                appliedOrderDiscountType={appliedOrderDiscountType} 
+                setAppliedOrderDiscountType={setAppliedOrderDiscountType} 
+                openDiscountModal={() => setIsApplyDiscountModalOpen(true)} 
+                openCustomerModal={() => setIsCustomerSearchModalOpen(true)}
+              />
+            </div>
+
+            {/* Cart Summary & Payment */}
+            <div className="p-4 border-t border-[var(--theme-border-color)] space-y-3">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-[var(--theme-text-secondary)]">
+                  <span>Subtotal</span>
+                  <span>RM {cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-[var(--theme-text-secondary)]">
+                  <span>Tax (6%)</span>
+                  <span>RM {(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 0.06).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-semibold text-[var(--theme-text-primary)]">
+                  <span>Total</span>
+                  <span className="text-[var(--theme-acceleration)]">
+                    RM {(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 1.06).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setIsPaymentModalOpen(true)}
+                disabled={cartItems.length === 0}
+                className="w-full py-3 bg-[var(--theme-acceleration)] text-white rounded-lg hover:bg-[var(--theme-acceleration)]/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                Process Payment
+              </button>
+            </div>
           </div>
-          <CartDisplay 
-            selectedCustomer={selectedCustomer}
-            onPayNow={() => setIsPaymentModalOpen(true)}
-            orderDiscountInput={orderDiscountInput}
-            setOrderDiscountInput={setOrderDiscountInput} 
-            appliedOrderDiscountValue={appliedOrderDiscountValue} 
-            setAppliedOrderDiscountValue={setAppliedOrderDiscountValue} 
-            appliedOrderDiscountType={appliedOrderDiscountType} 
-            setAppliedOrderDiscountType={setAppliedOrderDiscountType} 
-            openDiscountModal={() => setIsApplyDiscountModalOpen(true)} 
-            openCustomerModal={() => setIsCustomerSearchModalOpen(true)}
-          />
         </div>
       </div>
 

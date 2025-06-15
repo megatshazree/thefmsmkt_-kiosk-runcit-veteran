@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../components/common/Modal';
 import KioskButton from '../../components/common/KioskButton';
 import KioskInput from '../../components/common/KioskInput';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
+import { useLanguageStore } from '../../store/languageStore';
 
 interface ApplyDiscountModalProps {
   isOpen: boolean;
@@ -14,8 +14,8 @@ interface ApplyDiscountModalProps {
 }
 
 const ApplyDiscountModal: React.FC<ApplyDiscountModalProps> = ({ isOpen, onClose, onApplyDiscount, onRemoveDiscount, currentDiscountInput }) => {
-  const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
+  const { translate } = useLanguageStore();
 
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
   const [discountValue, setDiscountValue] = useState('');

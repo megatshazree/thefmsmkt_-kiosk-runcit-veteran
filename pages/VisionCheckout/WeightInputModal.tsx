@@ -4,7 +4,7 @@ import KioskButton from '../../components/common/KioskButton';
 import KioskInput from '../../components/common/KioskInput';
 import { Product } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 
 interface WeightInputModalProps {
   isOpen: boolean;
@@ -15,7 +15,7 @@ interface WeightInputModalProps {
 
 const WeightInputModal: React.FC<WeightInputModalProps> = ({ isOpen, onClose, onConfirm, product }) => {
   const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
   const [weight, setWeight] = useState('');
 
   useEffect(() => {
@@ -27,7 +27,7 @@ const WeightInputModal: React.FC<WeightInputModalProps> = ({ isOpen, onClose, on
   const handleConfirm = () => {
     const numericWeight = parseFloat(weight);
     if (!product || isNaN(numericWeight) || numericWeight <= 0) {
-      showToast(translate('toast_invalid_weight'), 'warning');
+      showToast(translate('toast_invalid_weight'), { type: 'warning' });
       return;
     }
     onConfirm(product, numericWeight);

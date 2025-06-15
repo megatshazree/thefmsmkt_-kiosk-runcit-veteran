@@ -4,7 +4,7 @@ import KioskButton from '../../components/common/KioskButton';
 import KioskInput from '../../components/common/KioskInput';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Product } from '../../types';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 
 interface CheckPriceModalProps {
   isOpen: boolean;
@@ -14,7 +14,7 @@ interface CheckPriceModalProps {
 
 const CheckPriceModal: React.FC<CheckPriceModalProps> = ({ isOpen, onClose, products }) => {
   const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [foundProduct, setFoundProduct] = useState<Product | null>(null);
 
@@ -27,7 +27,7 @@ const CheckPriceModal: React.FC<CheckPriceModalProps> = ({ isOpen, onClose, prod
 
   const handleSearch = () => {
     if (!searchQuery.trim()) {
-      showToast(translate('toast_price_check_enter_query'), 'warning');
+      showToast(translate('toast_price_check_enter_query'), { type: 'warning' });
       return;
     }
     const query = searchQuery.toLowerCase();
@@ -36,7 +36,7 @@ const CheckPriceModal: React.FC<CheckPriceModalProps> = ({ isOpen, onClose, prod
     );
     setFoundProduct(result || null);
     if (!result) {
-        showToast(translate('pos_check_price_not_found'), 'info');
+        showToast(translate('pos_check_price_not_found'), { type: 'info' });
     }
   };
   

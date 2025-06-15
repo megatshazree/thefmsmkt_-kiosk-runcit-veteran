@@ -1,10 +1,8 @@
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useCart } from '../../contexts/CartContext';
-import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import KioskButton from '../../components/common/KioskButton';
-import KioskInput from '../../components/common/KioskInput'; // Not used here anymore after discount modal
 import { XCircleIcon, SparklesIcon, TagIcon } from '@heroicons/react/24/solid';
 import { getRelatedProductSuggestions } from '../../services/geminiService';
 import { mockProducts } from '../../constants/mockData';
@@ -30,23 +28,21 @@ const CartDisplay: React.FC<CartDisplayProps> = ({
     orderDiscountInput, 
     appliedOrderDiscountValue, 
     setAppliedOrderDiscountValue,
-    appliedOrderDiscountType,
     setAppliedOrderDiscountType,
     openDiscountModal,
     openCustomerModal
 }) => {
-  const { cartItems, removeFromCart, getCartSubtotal, getCartTax, getItemCount, updateQuantity } = useCart();
-  const { translate } = useLanguage();
+  const { cartItems, removeFromCart, updateQuantity } = useCart();
   const { showToast } = useToast();
-  
+  const { translate } = useLanguage();
   const [geminiSuggestions, setGeminiSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
 
-  const subtotal = getCartSubtotal();
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
  useEffect(() => {
     let newDiscountAmount = 0;
-    let newDiscountType: 'percentage' | 'fixed' | null = null;
+    let discountType: 'percentage' | 'fixed' | null = null;
 
     if (orderDiscountInput) {
         const trimmedInput = orderDiscountInput.trim();
@@ -54,19 +50,18 @@ const CartDisplay: React.FC<CartDisplayProps> = ({
             const percentage = parseFloat(trimmedInput.slice(0, -1));
             if (!isNaN(percentage) && percentage >= 0 && percentage <= 100) {
                 newDiscountAmount = subtotal * (percentage / 100);
-                newDiscountType = 'percentage';
+                discountType = 'percentage';
             }
         } else {
             const amount = parseFloat(trimmedInput);
             if (!isNaN(amount) && amount >= 0) {
                 newDiscountAmount = Math.min(amount, subtotal); // Cap discount at subtotal
-                newDiscountType = 'fixed';
+                discountType = 'fixed';
             }
         }
     }
-    
     setAppliedOrderDiscountValue(newDiscountAmount);
-    setAppliedOrderDiscountType(newDiscountType);
+    setAppliedOrderDiscountType(discountType);
 
 }, [orderDiscountInput, subtotal, setAppliedOrderDiscountValue, setAppliedOrderDiscountType]);
 
@@ -131,6 +126,7 @@ const CartDisplay: React.FC<CartDisplayProps> = ({
       </div>
       <div className="mb-3">
         <button 
+          type="button"
           onClick={openCustomerModal}
           className="text-sm text-[var(--theme-accent-cyan)] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[var(--theme-focus-ring)] rounded-md p-1 -m-1"
           aria-label={translate('pos_customer_search_action_text')}
@@ -166,6 +162,7 @@ const CartDisplay: React.FC<CartDisplayProps> = ({
               <div className="flex items-center space-x-2">
                 <span className="font-medium text-sm text-[var(--theme-text-primary)] w-16 text-right">RM {(item.price * item.quantity).toFixed(2)}</span>
                 <button 
+                  type="button"
                   onClick={() => removeFromCart(item.id)} 
                   className="text-red-400 hover:text-red-300 p-0.5 rounded-full focus:outline-none focus:ring-1 focus:ring-red-300"
                   aria-label={`Remove ${item.name} from cart`}

@@ -5,7 +5,7 @@ import KioskInput from '../../components/common/KioskInput';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Product, ProductSet } from '../../types';
 import { mockProducts } from '../../constants/mockData'; // To list products for selection
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 
 interface CreateProductSetModalProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ interface CreateProductSetModalProps {
 
 const CreateProductSetModal: React.FC<CreateProductSetModalProps> = ({ isOpen, onClose, onSave, existingSet }) => {
   const { translate } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
 
   const [setName, setSetName] = useState('');
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);

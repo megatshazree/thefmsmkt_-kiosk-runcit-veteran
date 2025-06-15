@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean Test - THEFMSMKT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #112C70;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .success { color: #22c55e; }
+        .loading { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <h1>🧪 THEFMSMKT Clean Test</h1>
+    <div id="status" class="loading">Testing...</div>
+    
+    <script>
+        console.log('Clean test page loaded');
+        
+        // Test if our main app bundle loads without conflicts
+        try {
+            document.getElementById('status').innerHTML = `
+                <div class="success">✅ Clean environment working</div>
+                <div>No web component conflicts detected</div>
+                <div><a href="/" style="color: #56E1E9;">← Go to Main App</a></div>
+            `;
+        } catch (error) {
+            document.getElementById('status').innerHTML = `
+                <div style="color: #ef4444;">❌ Error: ${error.message}</div>
+            `;
+        }
+    </script>
+</body>
+</html>

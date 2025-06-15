@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../components/common/Modal';
 import KioskButton from '../../components/common/KioskButton';
 import KioskInput from '../../components/common/KioskInput';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useCart } from '../../contexts/CartContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
+import { useLanguageStore } from '../../store/languageStore';
+import { useCartStore } from '../../store/cartStore';
 import { paymentMethods } from '../../constants/menuItems';
 import { AnonymizedCustomerAnalytics, BuyerInfo, EInvoiceDetails, GeminiResponse, SupplierInfo, Customer } from '../../types'; // Added Customer
 import { getDemographicInsightSummary, generateSimulatedEInvoiceData } from '../../services/geminiService';
@@ -25,9 +25,9 @@ interface PaymentModalProps {
 import { DEFAULT_TAX_RATE } from '../../constants/appConstants';
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentSuccess, currentOrderDiscount, selectedCustomer }) => {
-  const { translate, language } = useLanguage();
-  const { cartItems, getCartSubtotal, getCartTax } = useCart(); 
-  const { showToast } = useToast();
+  const { translate, language } = useLanguageStore();
+  const { cartItems, getCartSubtotal, getCartTax } = useCartStore(); 
+  const { showToast } = useToastStore();
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>(paymentMethods[0].key);
   const [cashReceived, setCashReceived] = useState<string>('');

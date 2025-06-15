@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'; 
 
 const ToastContainer: React.FC = () => { // Renamed for clarity, as it's the container
-  const { toasts } = useToast();
+  const { toasts } = useToastStore();
 
   if (!toasts.length) {
     return null;
@@ -51,7 +51,7 @@ const ToastContainer: React.FC = () => { // Renamed for clarity, as it's the con
             key={toast.id}
             className={`flex items-center p-4 rounded-xl shadow-lg ${bgColor} ${textColor} min-w-[250px] max-w-md animate-fadeIn border border-black/10`} 
             role="alert" // Individual alerts
-            aria-live={toast.type === 'error' || toast.type === 'warning' ? "assertive" : "polite"} // More assertive for errors/warnings
+            aria-live={toast.type === 'error' || toast.type === 'warning' ? 'assertive' : 'polite'}
           >
             <IconComponent className={`h-6 w-6 mr-3 flex-shrink-0 ${iconColor}`} aria-hidden="true" />
             <span className="text-sm font-medium">{toast.message}</span>

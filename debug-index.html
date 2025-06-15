@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug THEFMSMKT POS</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #112C70; 
+            color: white; 
+            padding: 20px;
+        }
+        .debug-info { 
+            background: #0A2353; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 THEFMSMKT Debug Page</h1>
+    
+    <div class="debug-info">
+        <h3>Environment Test</h3>
+        <div id="env-test">Testing environment variables...</div>
+    </div>
+    
+    <div class="debug-info">
+        <h3>App Status</h3>
+        <div id="app-status">Loading...</div>
+    </div>
+    
+    <div class="debug-info">
+        <h3>Console Logs</h3>
+        <div id="console-logs"></div>
+    </div>
+
+    <script>
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logs = [];
+        
+        console.log = function(...args) {
+            logs.push('LOG: ' + args.join(' '));
+            originalLog.apply(console, args);
+            updateLogs();
+        };
+        
+        console.error = function(...args) {
+            logs.push('ERROR: ' + args.join(' '));
+            originalError.apply(console, args);
+            updateLogs();
+        };
+        
+        function updateLogs() {
+            document.getElementById('console-logs').innerHTML = 
+                logs.map(log => `<div style="margin: 2px 0; font-size: 12px;">${log}</div>`).join('');
+        }
+        
+        // Test environment
+        try {
+            const envTest = document.getElementById('env-test');
+            envTest.innerHTML = `
+                <div>✅ JavaScript is working</div>
+                <div>🌐 Location: ${window.location.href}</div>
+                <div>📱 User Agent: ${navigator.userAgent.substring(0, 50)}...</div>
+                <div>⏰ Current Time: ${new Date().toISOString()}</div>
+            `;
+            
+            document.getElementById('app-status').innerHTML = `
+                <div>✅ Basic HTML/CSS/JS working</div>
+                <div>🎯 Root element exists: ${document.getElementById('root') ? 'Yes' : 'No'}</div>
+                <div>📊 DOM Ready: ${document.readyState}</div>
+            `;
+            
+            console.log('Debug page loaded successfully');
+            
+        } catch (error) {
+            document.getElementById('env-test').innerHTML = '❌ JavaScript Error: ' + error.message;
+            console.error('Debug page error:', error);
+        }
+    </script>
+    
+    <div id="root"></div>
+</body>
+</html>

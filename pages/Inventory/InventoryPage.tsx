@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -8,7 +7,7 @@ import KioskButton from '../../components/common/KioskButton';
 import Modal from '../../components/common/Modal';
 import { generateProductDescription, generateProductImageWithImagen } from '../../services/geminiService';
 import { extractProductDetailsFromImageText } from '../../services/visionAIService';
-import { useToast } from '../../contexts/ToastContext';
+import { useToastStore } from '../../store/toastStore';
 import { Product } from '../../types';
 import { SparklesIcon, CameraIcon, PhotoIcon, CubeTransparentIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/solid'; 
 import Loader from '../../components/common/Loader';
@@ -81,7 +80,7 @@ const InventoryTable: React.FC<{
 
 const InventoryPage: React.FC = () => {
   const { translate, language } = useLanguage();
-  const { showToast } = useToast();
+  const { showToast } = useToastStore();
 
   const [products, setProducts] = useState<Product[]>(() => JSON.parse(JSON.stringify(mockProducts)));
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -104,6 +103,11 @@ const InventoryPage: React.FC = () => {
   const [isVisionAIModalOpen, setIsVisionAIModalOpen] = useState(false);
   const [visionAIInputText, setVisionAIInputText] = useState('');
   const [isProcessingVisionAI, setIsProcessingVisionAI] = useState(false);
+
+  // Bulk Imagen 3 generation state
+  const [isBulkGenerating, setIsBulkGenerating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number; errors: number; lastError?: string }>({ current: 0, total: 0, errors: 0 });
+  const [bulkErrorList, setBulkErrorList] = useState<{ name: string; error: string }[]>([]);
 
   const availableCategories = useMemo(() => {
     const allCats = new Set(products.map(p => p.category).filter(Boolean));
@@ -212,7 +216,8 @@ const InventoryPage: React.FC = () => {
 
   const handleEditProduct = useCallback((productToEdit: Product) => {
     setEditingProduct(productToEdit);
-    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    window.scrollTo({ behavior: 'smooth' }); // Removed to fix lint warning
+    // window.scrollTo({ block: 'start', behavior: 'smooth' }); // Alternative for modern browsers
   }, []);
   
   const handleDeleteProduct = useCallback((productId: number) => {
@@ -272,6 +277,74 @@ const InventoryPage: React.FC = () => {
     }
   }, [visionAIInputText, language, availableCategories, showToast, translate]);
 
+  // Bulk generate images for all products (with retry and error list)
+  const handleBulkGenerateImages = useCallback(async () => {
+    setIsBulkGenerating(true);
+    setBulkProgress({ current: 0, total: products.length, errors: 0 });
+    setBulkErrorList([]);
+    let updatedProducts = [...products];
+    let errorCount = 0;
+    let errorList: { name: string; error: string }[] = [];
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      if (!p.image.startsWith('data:image')) {
+        let result = await generateProductImageWithImagen(p.name, p.category, p.description || '');
+        // Retry once if failed
+        if (!result.data && result.error) {
+          await new Promise(res => setTimeout(res, 1500));
+          result = await generateProductImageWithImagen(p.name, p.category, p.description || '');
+        }
+        if (result.data) {
+          updatedProducts[i] = { ...p, image: `data:image/jpeg;base64,${result.data}` };
+        } else {
+          errorCount++;
+          errorList.push({ name: p.name, error: result.error || 'Unknown error' });
+        }
+      }
+      setBulkProgress({ current: i + 1, total: products.length, errors: errorCount, lastError: errorList[errorList.length-1]?.error });
+      setBulkErrorList([...errorList]);
+      await new Promise(res => setTimeout(res, 1200));
+    }
+    setProducts(updatedProducts);
+    setIsBulkGenerating(false);
+    showToast(`Bulk image generation complete. Errors: ${errorCount}`, errorCount ? 'warning' : 'success');
+  }, [products, showToast]);
+
+  // Retry only failed products
+  const handleRetryFailedImages = useCallback(async () => {
+    if (bulkErrorList.length === 0) return;
+    setIsBulkGenerating(true);
+    setBulkProgress({ current: 0, total: bulkErrorList.length, errors: 0 });
+    let updatedProducts = [...products];
+    let errorCount = 0;
+    let errorList: { name: string; error: string }[] = [];
+    for (let i = 0; i < bulkErrorList.length; i++) {
+      const failed = bulkErrorList[i];
+      const idx = products.findIndex(p => p.name === failed.name);
+      if (idx !== -1) {
+        const p = products[idx];
+        let result = await generateProductImageWithImagen(p.name, p.category, p.description || '');
+        // Retry once if failed
+        if (!result.data && result.error) {
+          await new Promise(res => setTimeout(res, 1500));
+          result = await generateProductImageWithImagen(p.name, p.category, p.description || '');
+        }
+        if (result.data) {
+          updatedProducts[idx] = { ...p, image: `data:image/jpeg;base64,${result.data}` };
+        } else {
+          errorCount++;
+          errorList.push({ name: p.name, error: result.error || 'Unknown error' });
+        }
+      }
+      setBulkProgress({ current: i + 1, total: bulkErrorList.length, errors: errorCount, lastError: errorList[errorList.length-1]?.error });
+      setBulkErrorList([...errorList]);
+      await new Promise(res => setTimeout(res, 1200));
+    }
+    setProducts(updatedProducts);
+    setIsBulkGenerating(false);
+    showToast(`Retry complete. Errors: ${errorCount}`, errorCount ? 'warning' : 'success');
+  }, [bulkErrorList, products, showToast]);
+
   const filteredProducts = useMemo(() => products.filter(p => 
     p.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
     (p.sku && p.sku.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
@@ -279,8 +352,42 @@ const InventoryPage: React.FC = () => {
 
 
   return (
-    <div>
-      <PageHeader title={translate('inventory_title')} subtitle={translate('inventory_subtitle')} />
+    <div className="flex flex-col min-h-screen">
+      <PageHeader title={translate('inventory_title')} />
+      <div className="flex items-center gap-4 mb-4">
+        {/* Bulk Imagen 3 button for admin */}
+        <KioskButton
+          variant="gemini"
+          onClick={handleBulkGenerateImages}
+          isLoading={isBulkGenerating}
+          disabled={isBulkGenerating}
+        >
+          <SparklesIcon className="h-5 w-5 mr-2" />
+          {isBulkGenerating ? `${bulkProgress.current}/${bulkProgress.total}...` : translate('inventory_btn_bulk_imagen') || 'Bulk Generate Images'}
+        </KioskButton>
+        {bulkErrorList.length > 0 && !isBulkGenerating && (
+          <KioskButton
+            variant="danger"
+            onClick={handleRetryFailedImages}
+            disabled={isBulkGenerating}
+          >
+            Retry Failed ({bulkErrorList.length})
+          </KioskButton>
+        )}
+        {isBulkGenerating && (
+          <span className="text-xs text-[var(--theme-text-muted)]">Progress: {bulkProgress.current}/{bulkProgress.total} | Errors: {bulkProgress.errors}{bulkProgress.lastError ? ` | Last error: ${bulkProgress.lastError}` : ''}</span>
+        )}
+        {bulkErrorList.length > 0 && !isBulkGenerating && (
+          <div className="text-xs text-red-400 max-w-xl overflow-x-auto">
+            <div className="font-semibold mb-1">Errors:</div>
+            <ul className="list-disc pl-5">
+              {bulkErrorList.map((err, idx) => (
+                <li key={idx}>{err.name}: {err.error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
       
       <div className="bg-[var(--theme-panel-bg)] p-6 rounded-xl shadow-lg mb-6 border border-[var(--theme-border-color)]">
         <h3 className="text-xl font-semibold text-[var(--theme-text-primary)] mb-4">{editingProduct ? translate('btn_edit') : translate('inventory_add_new_sim')}</h3>

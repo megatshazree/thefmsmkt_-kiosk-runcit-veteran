@@ -73,9 +73,12 @@ import {
 // and the visual style you're aiming for from "CosyPOS" which has fewer, broader categories.
 
 export interface CategoryStyle {
+  key: string; // Category key identifier
   icon: React.ReactElement<React.SVGProps<SVGSVGElement>>;
   bgColor: string; // CSS variable for background
   translationKey: string;
+  displayName: string; // Display name for the category
+  count?: number; // Number of items in this category
   itemCount?: number; // Optional, can be fetched dynamically
 }
 
@@ -136,18 +139,24 @@ export const getStyledCategories = (allCategories: string[], productCounts: Reco
     // If "Main Course" from CosyPOS maps to your "pos_cat_rte" (Ready-to-Eat), it'll pick FireIcon.
 
     return {
+      key: translationKey, // Use translationKey as the key
       translationKey: translationKey, // This needs to exist in your translation files
+      displayName: categoryName, // Use the original category name as display name
       icon: icon,
       bgColor: categoryColors[index % categoryColors.length],
+      count: productCounts[categoryName] || 0,
       itemCount: productCounts[categoryName] || 0,
     };
   });
 
   // Add an "All" category if you want
    styled.unshift({
+    key: "pos_cat_all",
     translationKey: "pos_cat_all",
+    displayName: "All",
     icon: <Squares2X2Icon className="h-8 w-8" />,
     bgColor: 'var(--theme-panel-bg-alt)', // Darker, different style for "All"
+    count: Object.values(productCounts).reduce((sum, count) => sum + count, 0),
     itemCount: Object.values(productCounts).reduce((sum, count) => sum + count, 0)
   });
   
